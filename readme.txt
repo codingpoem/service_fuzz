@@ -11,19 +11,20 @@ HWPCT:/data/local/tmp $ ./service_fuzz -h
          -f,  --file           fuzz all services in file
          -a,  --all            fuzz all services in servicemanager
 参数说明：
--s  测试某个系统服务。
--f  从文件中获取需要测试的系统服务名称。
+-s  对某个系统服务进行测试。
+-f  对文件中列出的系统服务进行测试。
 -a  测试所有servicemanager注册的系统服务
 
-程序执行过程中会收集logcat日志，程序执行完毕后，当前目录会生成一个crashs.log文件，这个文件记录了在测试过程中引发系统crash的相关日志。可以通过查看相关日志定位crash原因。
+程序执行过程中会收集logcat日志，程序执行完毕后，当前目录会生成一个crashs.log文件，如果服务在处理相关数据出现了异常，这个文件记录了在测试过程中引发系统crash的相关日志。可以通过查看相关日志定位crash原因。
 
 
 # example
-
-HWPCT:/data/local/tmp $ ./service_fuzz  -s hwPcManager                                                    
-service_name:hwPcManager
+130|HWPCT:/data/local/tmp $ ./service_fuzz -s hwPcManager                                     
+service name:hwPcManager
 interface name:android.pc.IHwPCManager
---crash service name:android.pc.IHwPCManager
+--crash!,code:25
+HWPCT:/data/local/tmp/zoudn $ 
+
 
 HWPCT:/data/local/tmp $ cat crashs.log                                                                    
 ---------android.pc.IHwPCManager-------
@@ -37,4 +38,4 @@ HWPCT:/data/local/tmp $ cat crashs.log
 HWPCT:/data/local/tmp $ 
 
 
-
+说明：对系统服务hwPcManager进行测试，结果现实测试的服务名称为hwPcManager，对应的系统服务接口是android.pc.IHwPCManager，引起crash的binder通信code是25。

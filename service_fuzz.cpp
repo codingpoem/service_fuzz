@@ -28,10 +28,34 @@ static const struct option long_options[] = {
 
 void usage()
 {
-    printf("         -h,  --help           short help\n");
+    printf("         -h,  --help           show help\n");
     printf("         -s,  --service        fuzz a service\n");
     printf("         -f,  --file           fuzz all services in file\n");
-    printf("         -a,  --all           fuzz all services in servicemanager\n");
+    printf("         -a,  --all            fuzz all services in servicemanager\n");
+}
+
+int check_crash()
+{
+    system("logcat -b crash -d > crash.log ");
+
+    FILE *fp;
+    char ch;
+    if ((fp = fopen("crash.log", "r")) == NULL)
+    {
+        printf("Error!\n");
+        exit(0);
+    }
+    ch = fgetc(fp);
+    if (ch > -1 && ch < 128)
+    {
+        return 1;
+        fclose(fp);
+    }
+    else
+    {
+        return 0;
+        fclose(fp);
+    }
 }
 
 void fuzz_service(sp<IBinder> service)
@@ -48,33 +72,20 @@ void fuzz_service(sp<IBinder> service)
             data.writeInt32(random());
         }
         service->transact(code, data, &reply, 1);
+        sleep(1);
+        if (check_crash())
+        {
+            printf("--crash!,code:%d\n", code);
+            // system("echo ------------------------------------- >> crashs.log");
+            string str1("echo ---------");
+            str1.append(String8(ifName).string());
+            str1.append("------- >> crashs.log");
+            system(str1.c_str());
+            system("cat crash.log >> crashs.log");
+            sleep(10);
+            break;
+        }
     }
-    sleep(3); //wait 3s until crash came up
-
-    //collect crash log,if crash.log is empty ,ignore; else,save up;
-    system("logcat -b crash -d > crash.log ");
-
-    FILE *fp;
-    char ch;
-    if ((fp = fopen("crash.log", "r")) == NULL)
-    {
-        printf("Error!\n");
-        exit(0);
-    }
-    ch = fgetc(fp);
-    if (ch > -1 && ch < 128)
-    {
-        // printf("--crash.log is not empty\n");
-        printf("--crash service name:%s\n", String8(ifName).string());
-        // system("echo ------------------------------------- >> crashs.log");
-        string str1("echo ---------");
-        str1.append(String8(ifName).string());
-        str1.append("------- >> crashs.log");
-        system(str1.c_str());
-        system("cat crash.log >> crashs.log");
-        sleep(5);
-    }
-    fclose(fp);
 }
 
 void fuzz_one(char *service_name)
@@ -82,9 +93,8 @@ void fuzz_one(char *service_name)
     //clear crash log
     system("logcat -c");
     system("rm crash*");
-    sleep(1);
 
-    printf("service_name:%s\n", service_name);
+    printf("service name:%s\n", service_name);
 
     sp<IServiceManager> sm = defaultServiceManager();
     sp<IBinder> service = sm->checkService(String16(service_name));
@@ -95,7 +105,7 @@ void fuzz_one(char *service_name)
     }
     else
     {
-        printf("error:%s is not in service list", service_name);
+        printf("error:%s service binder is NULL\n", service_name);
     }
 }
 
@@ -107,7 +117,7 @@ void fuzz_file(char *filePath)
 
     // printf("filePath:%s\n", filePath);
 
-    sp<IServiceManager> sm = defaultServiceManager();
+    // sp<IServiceManager> sm = defaultServiceManager();
     sp<IBinder> service = NULL;
 
     ifstream file;
@@ -122,21 +132,29 @@ void fuzz_file(char *filePath)
     {
         if (strLine.empty())
             continue;
-
+        // char *service_name = strLine.c_str();
         cout << "service name:" << strLine << endl;
+        sp<IServiceManager> sm = defaultServiceManager();
+
+        // Vector<String16> services = sm->listServices();
+        // for (uint32_t i = 0; i < services.size(); i++)
+        // {
+        //     printf("----service name:%s\n", String8(services[i]).string());
+        // }
+
         sp<IBinder> service = sm->checkService(String16(strLine.c_str()));
 
         if (service != NULL)
         {
             system("rm crash.log 2>/dev/null");
             system("logcat -c");
-
             fuzz_service(service);
         }
         else
         {
-            printf("error:%s is not in service list", strLine.c_str());
+            printf("error:%s service binder is NULL\n", strLine.c_str());
         }
+        // sleep(10);
     }
 }
 
@@ -146,50 +164,25 @@ void fuzz_all()
     cout << "start fuzz all service in servicemanager" << endl;
     system("logcat -c");
     system("rm crash*");
-    sleep(1);
 
     sp<IServiceManager> sm = defaultServiceManager();
     Vector<String16> services = sm->listServices();
     for (uint32_t i = 0; i < services.size(); i++)
     {
         String16 name = services[i];
+        // char *service_name = String8(name).string();
         sp<IBinder> service = sm->checkService(name);
         printf("service name:%s\n", String8(name).string());
 
-        // if (service != NULL && !service_is_ignore(name))
         if (service != NULL)
         {
             system("rm crash.log 2>/dev/null");
             system("logcat -c");
-
-            //fuzz service
             fuzz_service(service);
-            // sleep(2); //wait 3s until crash came up
-
-            //collect crash log,if crash.log is empty ,ignore; else,save up;
-            system("logcat -b crash -d > crash.log ");
-
-            FILE *fp;
-            char ch;
-            if ((fp = fopen("crash.log", "r")) == NULL)
-            {
-                printf("Error!\n");
-                exit(0);
-            }
-            ch = fgetc(fp);
-            if (ch > -1 && ch < 128)
-            {
-                printf("--crash.log is not empty\n");
-                printf("--crash service name:%s\n", String8(name).string());
-                system("echo ------------------------------------- >> crashs.log");
-                system("cat crash.log >> crashs.log");
-                sleep(10);
-            }
-            // else
-            // {
-            //     printf("crash.log is empty\n");
-            // }
-            fclose(fp);
+        }
+        else
+        {
+            printf("error:%s service binder is NULL\n", String8(name).string());
         }
     }
 }
