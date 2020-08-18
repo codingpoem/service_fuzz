@@ -6,7 +6,7 @@
 把代码放入安卓aosp环境。利用mm进行模块化编译。把生成文件放入手机执行即可。
 
 HWPCT:/data/local/tmp $ ./service_fuzz -h                                                                 
-         -h,  --help           short help
+         -h,  --help           show help
          -s,  --service        fuzz a service
          -f,  --file           fuzz all services in file
          -a,  --all            fuzz all services in servicemanager
