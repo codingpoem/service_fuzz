@@ -23,7 +23,7 @@ HWPCT:/data/local/tmp $ ./service_fuzz -h
 service name:hwPcManager
 interface name:android.pc.IHwPCManager
 --crash!,code:25
-HWPCT:/data/local/tmp/zoudn $ 
+HWPCT:/data/local/tmp $ 
 
 
 HWPCT:/data/local/tmp $ cat crashs.log                                                                    
