@@ -38,4 +38,4 @@ HWPCT:/data/local/tmp $ cat crashs.log
 HWPCT:/data/local/tmp $ 
 
 
-说明：对系统服务hwPcManager进行测试，结果现实测试的服务名称为hwPcManager，对应的系统服务接口是android.pc.IHwPCManager，引起crash的binder通信code是25。
+说明：对系统服务hwPcManager进行测试，测试的服务名称为hwPcManager，对应的系统服务接口是android.pc.IHwPCManager，引起crash的binder通信code是25。
